@@ -36,13 +36,14 @@ local function playEffect()
 end
 
 local function runRadarDetection()
-    local player = PlayerPedId(); -- Plus nécessaire de le mettre à jour chaque tick suite à une mise à jour récente
+    local player <const> = PlayerPedId(); -- Plus nécessaire de le mettre à jour chaque tick suite à une mise à jour récente
     local vehicleId = GetVehiclePedIsIn(player, false);
     currentVehicle = vehicleId; --- Pour vérifier que le joueur est toujours dans le même véhicule
-    local seatIndex = GetPedInVehicleSeat(vehicleId, -1);
+    local seatIndex <const> = GetPedInVehicleSeat(vehicleId, -1);
     if (seatIndex ~= player) then return; end
 
     isDetectionRunning = true;
+    print("[Radar] Détection de radar démarrée.");
     while (isDetectionRunning and (vehicleId ~= 0 and vehicleId == currentVehicle))  do
         vehicleId = GetVehiclePedIsIn(player, false);
         local playerPosition <const> = GetEntityCoords(player);
@@ -64,6 +65,7 @@ local function runRadarDetection()
         Wait(50);
     end
     
+    currentVehicle = nil;
     isDetectionRunning = false;
 end
 

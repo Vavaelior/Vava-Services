@@ -1,6 +1,6 @@
 RegisterServerEvent('radar:payFine', function(speed, index)
-    local source = source;
-    local xPlayer = ESX.GetPlayerFromId(source);
+    local source <const> = source;
+    local xPlayer <const> = ESX.GetPlayerFromId(source);
 
     if (not xPlayer) then
         if not config.debug then return; end
@@ -38,7 +38,7 @@ RegisterServerEvent('radar:payFine', function(speed, index)
         return;
     end
 
-    local account = xPlayer.getAccount('money').money >= fine and 'money' or
+    local account <const> = xPlayer.getAccount('money').money >= fine and 'money' or
                     (xPlayer.getAccount('bank').money >= fine and 'bank' or nil);
 
     if not account then
