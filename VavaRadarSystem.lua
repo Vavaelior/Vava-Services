@@ -1,9 +1,5 @@
---[[ ESX = exports['es_extended']:getSharedObject() ]]
-local finePerKmh = 17 -- Amende par km/h au-dessus de la limite
-local isProcessingRadar = false -- Pour éviter les doubles détections
-
 -- Création des blips pour les radars
-Citizen.CreateThread(function()
+CreateThread(function()
     for _, radar in ipairs(config.radarPoints) do
         local blip = AddBlipForCoord(radar.position.x, radar.position.y, radar.position.z)
         SetBlipSprite(blip, 184)
@@ -21,6 +17,7 @@ local isDetectionRunning = false;
 local currentVehicle = nil;
 local isProcessingBill = false;
 
+---@return boolean
 local function checkForARadar(playerPosition, speed, index)
     local radarConfig <const> = config.radarPoints[index];
     if (not radarConfig) then return false; end
@@ -39,7 +36,7 @@ local function playEffect()
 end
 
 local function runRadarDetection()
-    local player = PlayerPedId(); -- Plus nécessaire de le mettre à jour chaque tick sutie à une mise à jour récente
+    local player = PlayerPedId(); -- Plus nécessaire de le mettre à jour chaque tick suite à une mise à jour récente
     local vehicleId = GetVehiclePedIsIn(player, false);
     currentVehicle = vehicleId; --- Pour vérifier que le joueur est toujours dans le même véhicule
     local seatIndex = GetPedInVehicleSeat(vehicleId, -1);
@@ -85,4 +82,13 @@ AddEventHandler('gameEventTriggered', function(name, args)
     if ((playerEntered ~= player) or (vehicle == currentVehicle)) then return; end
     
     runRadarDetection(); --- Inutile de faire un thread ici, car AddEventHandler le fait déjà
+end)
+
+AddEventHandler('onResourceStart', function(resourceName)
+    if (GetCurrentResourceName() ~= resourceName) then return; end
+
+    local player <const> = PlayerPedId();
+    local vehicleId <const> = GetVehiclePedIsIn(player, false);
+    if (vehicleId == 0) then return; end
+    runRadarDetection();
 end)
