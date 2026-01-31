@@ -1,5 +1,3 @@
-ESX = exports['es_extended']:getSharedObject()
-
 RegisterServerEvent('radar:payFine', function(speed, index)
     local source = source;
     local xPlayer = ESX.GetPlayerFromId(source);
