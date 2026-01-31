@@ -13,6 +13,16 @@ RegisterServerEvent('radar:payFine', function(speed, index)
         print(string.format("[Radar] Configuration de radar introuvable pour l'index %s", tostring(index)));
     end
 
+    local playerPed <const> = GetPlayerPed(source);
+    local position <const> = GetEntityCoords(playerPed);
+    local distance <const> = #(vector3(radarConfig.position) - position) * 2.5; -- Multiplié par 2.5 pour compenser la latence réseau
+    if (distance > config.maxDistance) then
+        if not config.debug then return; end
+        print(string.format("[Radar] Joueur %s trop loin du radar (distance: %.2f)", GetPlayerName(source), distance));
+        ---Ban le joueur pour triche potentielle ici si vous le souhaitez, à vos risque et péril :)
+        return;
+    end
+
     if (speed <= 0) then
         if not config.debug then return; end
         print(string.format("[Radar] Vitesse invalide reçue: %s", tostring(speed)));
