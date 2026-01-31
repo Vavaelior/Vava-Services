@@ -1,3 +1,7 @@
+local isDetectionRunning = false;
+local currentVehicle = nil;
+local isProcessingBill = false;
+
 -- Création des blips pour les radars
 CreateThread(function()
     for _, radar in ipairs(config.radarPoints) do
@@ -12,10 +16,6 @@ CreateThread(function()
         EndTextCommandSetBlipName(blip)
     end
 end)
-
-local isDetectionRunning = false;
-local currentVehicle = nil;
-local isProcessingBill = false;
 
 ---@return boolean
 local function checkForARadar(playerPosition, speed, index)
