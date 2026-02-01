@@ -7,6 +7,7 @@ version '1.0.0'
 
 shared_scripts {
     '@es_extended/imports.lua',  -- Si vous utilisez ESX
+    'sh_main.lua',
     'config.lua'
 }
 

@@ -1,46 +1,57 @@
-ESX = exports['es_extended']:getSharedObject()
+RegisterServerEvent('radar:payFine', function(speed, index)
+    local source <const> = source;
+    local xPlayer <const> = ESX.GetPlayerFromId(source);
 
--- Enregistrement de l'événement pour le paiement de l'amende
-RegisterServerEvent('radar:payFine')
-AddEventHandler('radar:payFine', function(fine)
-    local source = source
-    local xPlayer = ESX.GetPlayerFromId(source)
-    
-    if xPlayer then
-        -- Vérifie d'abord l'argent liquide
-        if xPlayer.getMoney() >= fine then
-            xPlayer.removeMoney(fine)
-            TriggerClientEvent('esx:showNotification', source, string.format('~r~Radar: ~w~Amende payée: ~r~$%d', fine))
-            if config.debug == true then
-                print(string.format("[Radar] %s a payé une amende de $%d", GetPlayerName(source), fine)) -- Debug log
-            end
-        
-        -- Sinon vérifie l'argent en banque
-        elseif xPlayer.getAccount('bank').money >= fine then
-            xPlayer.removeAccountMoney('bank', fine)
-            TriggerClientEvent('esx:showNotification', source, string.format('~r~Radar: ~w~Amende prélevée du compte bancaire: ~r~$%d', fine))
-            if config.debug == true then
-                print(string.format("[Radar] %s a payé une amende de $%d depuis son compte bancaire", GetPlayerName(source), fine)) -- Debug log
-            end
-        
-        -- Si pas assez d'argent du tout
-        else
-            local totalMoney = xPlayer.getMoney() + xPlayer.getAccount('bank').money
-            TriggerClientEvent('esx:showNotification', source, '~r~Attention: ~w~Vous n\'avez pas assez d\'argent pour payer l\'amende!')
-            if config.debug == true then
-                print(string.format("[Radar] %s n'a pas pu payer son amende de $%d (argent disponible: $%d)", GetPlayerName(source), fine, totalMoney))
-            end
-
-            -- Option: Vous pouvez ajouter ici une dette, un wanted level, ou autre conséquence
-        end
+    if (not xPlayer) then
+        if not config.debug then return; end
+        print(string.format("[Radar] Joueur introuvable pour l'ID %s", tostring(source)));
     end
-end)
 
--- Événement pour sauvegarder les statistiques des radars (optionnel)
-RegisterServerEvent('radar:logSpeed')
-AddEventHandler('radar:logSpeed', function(speed, location)
-    local source = source
-    if config.debug == true then
-        print(string.format("[Radar] %s a été flashé à %d km/h à %s", GetPlayerName(source), math.floor(speed), location)) -- Debug log
+    local radarConfig <const> = config.radarPoints[index];
+    if (not radarConfig) then
+        if not config.debug then return; end
+        print(string.format("[Radar] Configuration de radar introuvable pour l'index %s", tostring(index)));
     end
+
+    local playerPed <const> = GetPlayerPed(source);
+    local position <const> = GetEntityCoords(playerPed);
+    local distance <const> = #(vector3(radarConfig.position) - position) * 2.5; -- Multiplié par 2.5 pour compenser la latence réseau
+    if (distance > config.maxDistance) then
+        if not config.debug then return; end
+        print(string.format("[Radar] Joueur %s trop loin du radar (distance: %.2f)", GetPlayerName(source), distance));
+        ---Ban le joueur pour triche potentielle ici si vous le souhaitez, à vos risque et péril :)
+        return;
+    end
+
+    if (speed <= 0) then
+        if not config.debug then return; end
+        print(string.format("[Radar] Vitesse invalide reçue: %s", tostring(speed)));
+        ---Ban le joueur pour triche potentielle ici si vous le souhaitez
+    end
+
+    local speedLimit <const> = radarConfig.speedlimit or 0;
+    local fine <const> = calculateFine(speed, speedLimit);
+
+    if fine <= 0 then
+        if not config.debug then return; end        
+        print(string.format("[Radar] Aucune amende pour %s, vitesse: %d km/h, limite: %d km/h", GetPlayerName(source), speed, speedLimit));
+        return;
+    end
+
+    local account <const> = xPlayer.getAccount('money').money >= fine and 'money' or
+                    (xPlayer.getAccount('bank').money >= fine and 'bank' or nil);
+
+    if not account then
+        xPlayer.showNotification('~r~Attention: ~w~Vous n\'avez pas assez d\'argent pour payer l\'amende!');
+        if not config.debug then return; end
+        local totalMoney <const> = xPlayer.getMoney() + xPlayer.getAccount('bank').money;
+        print(('[Radar] %s n\'a pas pu payer son amende de $%d (argent disponible: $%d)'):format(GetPlayerName(source), fine, totalMoney));
+        return;
+    end
+
+    xPlayer.removeAccountMoney(account, fine);
+    xPlayer.showNotification(('~r~Radar: Vous avez été flashé à %s! ~s~Amende payée: ~r~$%d'):format(speed, fine));
+    xPlayer.triggerEvent('radar:updateBillState');
+    if not config.debug then return; end
+    print(('[Radar] %s a payé une amende de $%d depuis %s'):format(GetPlayerName(source), fine, account)) -- Debug log
 end)
